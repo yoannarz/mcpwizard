@@ -1,0 +1,33 @@
+{
+  "name": "mcpwizard",
+  "version": "0.1.0",
+  "description": "A tool to help you create and deploy MCP servers",
+  "main": "src/index.js",
+  "bin": {
+    "mcpwizard": "./bin/mcpwizard.js"
+  },
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "wizard",
+    "cli"
+  ],
+  "author": "MCP Wizard",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.2.0",
+    "commander": "^11.0.0",
+    "fs-extra": "^11.1.1",
+    "globby": "^14.1.0",
+    "inquirer": "^9.2.7",
+    "ora": "^6.3.1"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.7.0",
+    "@types/node": "^22.13.11"
+  }
+}
