@@ -2,6 +2,9 @@ import ora from "ora";
 import chalk from "chalk";
 import { exec } from "child_process";
 import util from "util";
+import fs from "fs-extra";
+import path from "path";
+import { globby } from "globby";
 import { detectProjectType } from "../utils/project-detector.js";
 
 const execPromise = util.promisify(exec);
@@ -21,9 +24,23 @@ export async function buildCommand() {
     process.exit(1);
   }
 
-  const spinner = ora("Building the project...").start();
+  let spinner = ora("Building the project...").start();
 
   try {
+    // Detect MCP capabilities based on project structure
+    spinner.text = "Detecting MCP capabilities...";
+    const capabilities = await detectCapabilities(projectType);
+    spinner.succeed(
+      `Detected capabilities: ${Object.keys(capabilities).join(", ")}`
+    );
+
+    // Update main files with detected capabilities
+    spinner = ora("Updating server configuration...").start();
+    await updateCapabilitiesConfig(projectType, capabilities);
+    spinner.succeed("Server configuration updated");
+
+    spinner = ora("Building the project...").start();
+
     if (projectType === "typescript") {
       // Check if dependencies are installed
       spinner.text = "Checking dependencies...";
@@ -71,6 +88,132 @@ export async function buildCommand() {
   }
 }
 
+/**
+ * Detect MCP capabilities based on project structure
+ */
+async function detectCapabilities(projectType) {
+  const capabilities = {};
+  const cwd = process.cwd();
+
+  // Check for tools
+  if (projectType === "typescript") {
+    const hasTools =
+      (await fs.pathExists(path.join(cwd, "src/tools"))) &&
+      (await globby("src/tools/**/*.ts", { cwd })).length > 0;
+    if (hasTools) capabilities.tools = {};
+
+    const hasResources =
+      (await fs.pathExists(path.join(cwd, "src/resources"))) &&
+      (await globby("src/resources/**/*.ts", { cwd })).length > 0;
+    if (hasResources) capabilities.resources = { list: {} };
+
+    const hasPrompts =
+      (await fs.pathExists(path.join(cwd, "src/prompts"))) &&
+      (await globby("src/prompts/**/*.ts", { cwd })).length > 0;
+    if (hasPrompts) capabilities.prompts = {};
+  } else if (projectType === "python") {
+    const hasTools =
+      (await fs.pathExists(path.join(cwd, "tools"))) &&
+      (await globby("tools/**/*.py", { cwd })).length > 0;
+    if (hasTools) capabilities.tools = {};
+
+    const hasResources =
+      (await fs.pathExists(path.join(cwd, "resources"))) &&
+      (await globby("resources/**/*.py", { cwd })).length > 0;
+    if (hasResources) capabilities.resources = { list: {} };
+
+    const hasPrompts =
+      (await fs.pathExists(path.join(cwd, "prompts"))) &&
+      (await globby("prompts/**/*.py", { cwd })).length > 0;
+    if (hasPrompts) capabilities.prompts = {};
+  }
+
+  // Always add logging capability as a best practice
+  capabilities.logging = {};
+
+  return capabilities;
+}
+
+/**
+ * Update server configuration with detected capabilities
+ */
+async function updateCapabilitiesConfig(projectType, capabilities) {
+  const cwd = process.cwd();
+
+  if (projectType === "typescript") {
+    const indexPath = path.join(cwd, "src/index.ts");
+    if (await fs.pathExists(indexPath)) {
+      let content = await fs.readFile(indexPath, "utf8");
+      
+      // Check if capabilities are already defined
+      if (!content.includes("capabilities:")) {
+        // Find the server creation code, capturing the closing parenthesis
+        const serverCreationRegex = /(const\s+server\s*=\s*new\s+McpServer\(\s*{\s*name:[^}]*}\s*\))/;
+        const match = content.match(serverCreationRegex);
+        
+        if (match) {
+          // Remove the closing parenthesis from the matched string
+          let serverCreationWithoutClosingParen = match[1].slice(0, -1);
+          
+          // Format capabilities as a proper second argument to the constructor
+          let capabilitiesStr = ", {\n  capabilities: {";
+          
+          // Add individual capabilities
+          if (capabilities.tools) capabilitiesStr += "\n    tools: {},";
+          if (capabilities.resources) capabilitiesStr += "\n    resources: { list: {} },";
+          if (capabilities.prompts) capabilitiesStr += "\n    prompts: {},";
+          if (capabilities.logging) capabilitiesStr += "\n    logging: {},";
+          
+          // Remove trailing comma if it exists
+          if (capabilitiesStr.endsWith(',')) {
+            capabilitiesStr = capabilitiesStr.slice(0, -1);
+          }
+          
+          capabilitiesStr += "\n  }\n}";
+          
+          // Replace with proper construction with closing parenthesis at the end
+          const serverWithCapabilities = serverCreationWithoutClosingParen + capabilitiesStr + ");";
+          content = content.replace(match[0], serverWithCapabilities);
+          await fs.writeFile(indexPath, content, "utf8");
+        }
+      }
+    }
+  } else if (projectType === "python") {
+    // Python implementation remains unchanged
+    const serverPath = path.join(cwd, "server.py");
+    if (await fs.pathExists(serverPath)) {
+      let content = await fs.readFile(serverPath, "utf8");
+
+      // Check if capabilities are already defined
+      if (!content.includes("capabilities=")) {
+        // Find the server creation code
+        const serverCreationRegex = /mcp\s*=\s*FastMCP\(\s*["'][\w-]+["']\s*\)/;
+        const match = content.match(serverCreationRegex);
+
+        if (match) {
+          // Convert capabilities to Python dict format
+          let capabilitiesStr = "capabilities={\n";
+          if (capabilities.tools) capabilitiesStr += '    "tools": {},\n';
+          if (capabilities.resources)
+            capabilitiesStr += '    "resources": {"list": {}},\n';
+          if (capabilities.prompts) capabilitiesStr += '    "prompts": {},\n';
+          if (capabilities.logging) capabilitiesStr += '    "logging": {},\n';
+          capabilitiesStr += "}";
+
+          // Extract server name from original initialization
+          const serverNameMatch = match[0].match(/["']([\w-]+)["']/);
+          const serverName = serverNameMatch
+            ? serverNameMatch[1]
+            : "example-server";
+
+          const serverWithCapabilities = `mcp = FastMCP("${serverName}", ${capabilitiesStr})`;
+          content = content.replace(match[0], serverWithCapabilities);
+          await fs.writeFile(serverPath, content, "utf8");
+        }
+      }
+    }
+  }
+}
 /**
  * Check if Node modules are installed
  */

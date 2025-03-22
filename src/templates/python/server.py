@@ -3,6 +3,7 @@ from mcp.server.fastmcp import FastMCP
 # Initialisation du serveur MCP
 mcp = FastMCP("example-server")
 
+# Note: Server capabilities will be automatically detected and configured during build
 # Tools will be added automatically here
 # run mcpwizard tool add my_first_tool to add your first tool
 

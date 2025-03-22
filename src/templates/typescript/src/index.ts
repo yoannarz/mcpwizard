@@ -6,6 +6,8 @@ const server = new McpServer({
   name: "example-server",
   version: "1.0.0"
 });
+// Note: Server capabilities will be automatically detected and configured during build
+// based on the contents of your src/tools, src/resources, and src/prompts directories
 
 // Tools will be added automatically here
 // Run mcpwizard tool add my_first_tool to add your first tool
