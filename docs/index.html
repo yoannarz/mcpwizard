@@ -13,6 +13,8 @@
       --dark: #1f2937;
       --light: #f3f4f6;
       --gray: #9ca3af;
+      --success: #10b981;
+      --pending: #f59e0b;
     }
     
     * {
@@ -90,11 +92,32 @@
       border-radius: 8px;
       padding: 2rem;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      position: relative;
     }
     
     .feature h3 {
       margin-bottom: 1rem;
       color: var(--primary);
+    }
+    
+    .status-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 0.8rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-weight: bold;
+    }
+    
+    .status-available {
+      background-color: var(--success);
+      color: white;
+    }
+    
+    .status-coming {
+      background-color: var(--pending);
+      color: white;
     }
     
     .install-code {
@@ -104,6 +127,27 @@
       border-radius: 8px;
       margin: 2rem 0;
       overflow-x: auto;
+    }
+    
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .tab {
+      padding: 0.5rem 1.5rem;
+      border-radius: 4px;
+      background-color: white;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .tab.active {
+      background-color: var(--primary);
+      color: white;
     }
     
     footer {
@@ -122,7 +166,7 @@
   <header>
     <div class="container">
       <h1>MCPWizard</h1>
-      <p>A powerful CLI tool to help you create and deploy Model Context Protocol (MCP) servers with ease.</p>
+      <p>A powerful CLI tool to help you create and deploy Model Context Protocol (MCP) servers for Claude and other AI models.</p>
       <a href="https://github.com/yoannarz/mcpwizard" class="btn">View on GitHub</a>
     </div>
   </header>
@@ -140,30 +184,74 @@
   <section>
     <div class="container">
       <h2>Features</h2>
-      <div class="features">
+      <div class="tabs">
+        <div class="tab active" onclick="showCurrentFeatures()">Current Features</div>
+        <div class="tab" onclick="showRoadmap()">Roadmap</div>
+      </div>
+      
+      <div id="current-features" class="features">
         <div class="feature">
+          <span class="status-badge status-available">Available</span>
           <h3>Initialize Projects</h3>
-          <p>Quickly bootstrap new MCP server projects with different templates (TypeScript, Python).</p>
+          <p>Bootstrap new MCP server projects with TypeScript or Python templates, complete with folder structure and dependencies.</p>
         </div>
         <div class="feature">
+          <span class="status-badge status-available">Available</span>
           <h3>Manage Tools</h3>
-          <p>Add, configure and manage tools for your MCP server with simple commands.</p>
+          <p>Add and configure MCP tools with simple commands, complete with proper schema validation.</p>
         </div>
         <div class="feature">
+          <span class="status-badge status-available">Available</span>
+          <h3>Authentication</h3>
+          <p>Secure login functionality to protect your MCP deployments using OAuth flow.</p>
+        </div>
+        <div class="feature">
+          <span class="status-badge status-available">Available</span>
           <h3>Generate Configs</h3>
-          <p>Automatically generate Claude Desktop configuration files for seamless integration.</p>
+          <p>Create Claude Desktop configuration files for local testing with one command.</p>
         </div>
         <div class="feature">
-          <h3>Build & Deploy</h3>
-          <p>Build your MCP server for deployment with a single command.</p>
+          <span class="status-badge status-available">Available</span>
+          <h3>Inspect MCP Servers</h3>
+          <p>Debug and analyze MCP servers to ensure they're configured properly.</p>
         </div>
         <div class="feature">
-          <h3>Inspect Servers</h3>
-          <p>Analyze and inspect your MCP servers to ensure they're working correctly.</p>
+          <span class="status-badge status-available">Available</span>
+          <h3>CLI Experience</h3>
+          <p>Intuitive command-line interface with helpful documentation and error handling.</p>
+        </div>
+      </div>
+      
+      <div id="roadmap" class="features" style="display: none;">
+        <div class="feature">
+          <span class="status-badge status-coming">Coming Soon</span>
+          <h3>MCP Resources Support</h3>
+          <p>Expand functionality to include MCP resources creation and management.</p>
         </div>
         <div class="feature">
-          <h3>Active Development</h3>
-          <p>MCPWizard is actively maintained and regularly updated with new features.</p>
+          <span class="status-badge status-coming">Coming Soon</span>
+          <h3>MCP Prompts Support</h3>
+          <p>Add capabilities for creating and managing MCP prompts in your server.</p>
+        </div>
+        <div class="feature">
+          <span class="status-badge status-coming">Coming Soon</span>
+          <h3>Deployment Service</h3>
+          <p>One-click deployment to cloud services for production-ready MCP servers.</p>
+        </div>
+        <div class="feature">
+          <span class="status-badge status-coming">Coming Soon</span>
+          <h3>MCP Transport Layer</h3>
+          <p>Support for custom transport layers in the MCP protocol.</p>
+        </div>
+        <div class="feature">
+          <span class="status-badge status-coming">In Planning</span>
+          <h3>Testing Framework</h3>
+          <p>Built-in testing capabilities for MCP components and tools.</p>
+        </div>
+        <div class="feature">
+          <span class="status-badge status-coming">In Planning</span>
+          <h3>Multi-model Support</h3>
+          <p>Expanded support for various AI models beyond Claude.</p>
         </div>
       </div>
     </div>
@@ -175,13 +263,15 @@
       <div class="install-code">
         <code>
 # Initialize a new MCP server project<br>
-mcpwizard init my-mcp-server<br><br>
+mcpwizard init my-mcp-server --template typescript<br><br>
 # Navigate to the project directory<br>
 cd my-mcp-server<br><br>
 # Add a tool to your server<br>
-mcpwizard tool add my-tool --description "My awesome tool"<br><br>
+mcpwizard tool add my-calculator --description "A calculator tool for basic math operations"<br><br>
 # Generate Claude Desktop configuration<br>
-mcpwizard generate-claude-config
+mcpwizard generate-claude-config<br><br>
+# Inspect your MCP server<br>
+mcpwizard inspect
         </code>
       </div>
     </div>
@@ -193,5 +283,21 @@ mcpwizard generate-claude-config
       <p>&copy; 2024 <a href="https://github.com/yoannarz">yoannarz</a></p>
     </div>
   </footer>
+  
+  <script>
+    function showCurrentFeatures() {
+      document.getElementById('current-features').style.display = 'grid';
+      document.getElementById('roadmap').style.display = 'none';
+      document.querySelectorAll('.tab')[0].classList.add('active');
+      document.querySelectorAll('.tab')[1].classList.remove('active');
+    }
+    
+    function showRoadmap() {
+      document.getElementById('current-features').style.display = 'none';
+      document.getElementById('roadmap').style.display = 'grid';
+      document.querySelectorAll('.tab')[0].classList.remove('active');
+      document.querySelectorAll('.tab')[1].classList.add('active');
+    }
+  </script>
 </body>
 </html> 
