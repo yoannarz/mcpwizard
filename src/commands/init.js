@@ -25,7 +25,7 @@ export async function initCommand(options) {
       {
         type: 'input',
         name: 'name',
-        message: 'Project name:',
+        message: 'Server name:',
         default: 'my-mcp-server'
       }
     ]);
@@ -78,12 +78,35 @@ export async function initCommand(options) {
     const templatePath = path.join(templatesDir, template);
     await fs.copy(templatePath, projectDir);
     
-    // Personalization of the package.json if TypeScript
+    // Get a clean server name for the MCP server
+    // Remove any special characters except dashes and underscores
+    const cleanServerName = options.name.replace(/[^a-z0-9-_]/g, '');
+    
+    // Personalization of the files based on template
     if (template === 'typescript') {
+      // Update package.json
       const pkgPath = path.join(projectDir, 'package.json');
       const pkg = await fs.readJson(pkgPath);
       pkg.name = options.name;
       await fs.writeJson(pkgPath, pkg, { spaces: 2 });
+      
+      // Update index.ts with the correct server name
+      const indexPath = path.join(projectDir, 'src/index.ts');
+      let indexContent = await fs.readFile(indexPath, 'utf8');
+      indexContent = indexContent.replace(
+        /name: "example-server"/g, 
+        `name: "${cleanServerName}"`
+      );
+      await fs.writeFile(indexPath, indexContent, 'utf8');
+    } else if (template === 'python') {
+      // Update server.py with the correct server name
+      const serverPath = path.join(projectDir, 'server.py');
+      let serverContent = await fs.readFile(serverPath, 'utf8');
+      serverContent = serverContent.replace(
+        /FastMCP\("example-server"\)/g, 
+        `FastMCP("${cleanServerName}")`
+      );
+      await fs.writeFile(serverPath, serverContent, 'utf8');
     }
     
     spinner.succeed(`Project ${chalk.green(options.name)} created successfully!`);
